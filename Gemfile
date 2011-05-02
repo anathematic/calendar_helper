@@ -1,4 +1,6 @@
-source :rubygems
+source "http://rubygems.org"
 
-gem 'hoe'
-gem 'flexmock'
+gemspec
+group :development do
+  gem 'flexmock', :require => 'flexmock/test_unit'
+end

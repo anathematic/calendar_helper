@@ -1,20 +1,9 @@
 require 'rubygems'
-require 'test/unit'
-require 'fileutils'
-require File.expand_path(File.dirname(__FILE__) + "/../lib/calendar_helper")
-
-require 'flexmock/test_unit'
-
-# require 'action_controller'
-# require 'action_controller/assertions'
-# require 'active_support/inflector'
+require 'bundler'
+Bundler.require(:default, :development)
 
 class CalendarHelperTest < Test::Unit::TestCase
-
-  # include Inflector
-  # include ActionController::Assertions::SelectorAssertions
   include CalendarHelper
-
 
   def test_with_output
     output = []
@@ -135,5 +124,4 @@ class CalendarHelperTest < Test::Unit::TestCase
       f.write %(</body></html>)
     end
   end
-
 end
