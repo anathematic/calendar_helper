@@ -39,6 +39,10 @@ module CalendarHelper
   #   :month_header      => false                               # If you use false, the current month header will disappear.
   #   :calendar_title    => Date::MONTHNAMES[options[:month]]   # Pass in a custom title for the calendar. Defaults to month name
   #
+  # Options, added in this repo
+  #   :other_month_colspan => 2     # Columns, used for displaying next and previous months
+  #   :display_day_names   => true  # Use false, when you don't need day names to be displayed
+  #
   # For more customization, you can pass a code block to this method, that will get one argument, a Date object,
   # and return a values for the individual table cells. The block can return an array, [cell_text, cell_attrs],
   # cell_text being the text that is displayed and cell_attrs a hash containing the attributes for the <td> tag
@@ -85,7 +89,9 @@ module CalendarHelper
       :previous_month_text => nil,
       :next_month_text     => nil,
       :month_header        => true,
-      :calendar_title      => Date::MONTHNAMES[options[:month]]
+      :calendar_title      => Date::MONTHNAMES[options[:month]],
+      :other_month_colspan => 2,
+      :display_day_names   => true
     }
     options = defaults.merge options
 
@@ -94,11 +100,6 @@ module CalendarHelper
 
     first_weekday = first_day_of_week(options[:first_day_of_week])
     last_weekday = last_day_of_week(options[:first_day_of_week])
-    
-    day_names = Date::DAYNAMES.dup
-    first_weekday.times do
-      day_names.push(day_names.shift)
-    end
 
     # TODO Use some kind of builder instead of straight HTML
     cal = %(<table class="#{options[:table_class]}" border="0" cellspacing="0" cellpadding="0">)
@@ -106,27 +107,35 @@ module CalendarHelper
     
     if (options[:month_header])
       cal << %(<tr>)
+      colspan = 7
       if options[:previous_month_text] or options[:next_month_text]
-        cal << %(<th colspan="2">#{options[:previous_month_text]}</th>)
-        colspan=3
-      else
-        colspan=7
+        cal << %(<th colspan="#{options[:other_month_colspan]}">#{options[:previous_month_text]}</th>)
+        colspan -= 2 * options[:other_month_colspan]
       end
       cal << %(<th colspan="#{colspan}" class="#{options[:month_name_class]}">#{options[:calendar_title]}</th>)
-      cal << %(<th colspan="2">#{options[:next_month_text]}</th>) if options[:next_month_text]
+      cal << %(<th colspan="#{options[:other_month_colspan]}">#{options[:next_month_text]}</th>) if options[:next_month_text]
       cal << %(</tr>)
     end
     
-    cal << %(<tr class="#{options[:day_name_class]}">)
-    
-    day_names.each do |d|
-      unless d[options[:abbrev]].eql? d
-        cal << "<th scope='col'><abbr title='#{d}'>#{d[options[:abbrev]]}</abbr></th>"
-      else
-        cal << "<th scope='col'>#{d[options[:abbrev]]}</th>"
+    if options[:display_day_names]
+      day_names = Date::DAYNAMES.dup
+      first_weekday.times do
+        day_names.push(day_names.shift)
       end
+      
+      cal << %(<tr class="#{options[:day_name_class]}">)
+    
+      day_names.each do |d|
+        unless d[options[:abbrev]].eql? d
+          cal << "<th scope='col'><abbr title='#{d}'>#{d[options[:abbrev]]}</abbr></th>"
+        else
+          cal << "<th scope='col'>#{d[options[:abbrev]]}</th>"
+        end
+      end
+      cal << "</tr>"
     end
-    cal << "</tr></thead><tbody><tr>"
+    
+    cal << "</thead><tbody><tr>"
     beginning_of_week(first, first_weekday).upto(first - 1) do |d|
       cal << %(<td class="#{options[:other_month_class]})
       cal << " weekendDay" if weekend?(d)
@@ -158,6 +167,8 @@ module CalendarHelper
       end
     end unless last.wday == last_weekday
     cal << "</tr></tbody></table>"
+    
+    cal.respond_to?(:html_safe) ? cal.html_safe : cal
   end
   
   private
@@ -190,5 +201,4 @@ module CalendarHelper
   def weekend?(date)
     [0, 6].include?(date.wday)
   end
-  
 end
